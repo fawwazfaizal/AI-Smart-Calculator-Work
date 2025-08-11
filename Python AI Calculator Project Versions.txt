@@ -1,0 +1,505 @@
+Python AI Calculator Project
+
+Version 1
+
+import math
+
+class SmartCalculator:
+    def __init__(self):
+        # Simple word replacements
+        self.words = {
+            'plus': '+', 'add': '+', 'tambah': '+',
+            'minus': '-', 'subtract': '-', 'tolak': '-', 
+            'times': '*', 'multiply': '*', 'darab': '*',
+            'divide': '/', 'divided by': '/', 'bahagi': '/',
+            'mod': '%', 'modulo': '%', 'remainder': '%', 'baki': '%',
+            'power': '**', 'squared': '**2', 'cubed': '**3'
+        }
+        
+        # Words to remove
+        self.remove_words = ['what is', 'calculate', 'find', 'berapa']
+        
+        # Store calculations
+        self.history = []
+    
+    def clean_text(self, text):
+        """Make text lowercase and clean"""
+        text = text.lower().strip()
+        
+        # Remove question words
+        for word in self.remove_words:
+            text = text.replace(word, '')
+        
+        # Handle "to the power of" first (longer phrases first)
+        if 'to the power of' in text:
+            text = text.replace('to the power of', '**')
+        
+        # Replace math words with symbols
+        for word, symbol in self.words.items():
+            text = text.replace(word, symbol)
+        
+        # Handle square root
+        if 'square root of' in text:
+            text = text.replace('square root of', 'math.sqrt(')
+            text = text + ')'
+        
+        # Handle factorial
+        if 'factorial of' in text:
+            import re
+            text = re.sub(r'factorial of (\d+)', r'math.factorial(\1)', text)
+            
+        # Clean up spaces
+        text = ' '.join(text.split())
+        return text
+    
+    def calculate(self, expression):
+        """Do the math safely"""
+        try:
+            # Only allow safe functions
+            allowed = {
+                'math': math,
+                'sqrt': math.sqrt,
+                'factorial': math.factorial,
+                'abs': abs,
+                'round': round
+            }
+            result = eval(expression, {"__builtins__": {}}, allowed)
+            return result
+        except:
+            return "Error: Can't calculate that"
+    
+    def process(self, user_input):
+        """Main function to handle input"""
+        # Check for special commands
+        if user_input.lower() == 'exit':
+            return None
+        if user_input.lower() == 'history':
+            if not self.history:
+                return "No calculations yet"
+            return '\n'.join([f"{calc} = {result}" for calc, result in self.history])
+        
+        # Clean the input
+        clean_input = self.clean_text(user_input)
+        
+        if not clean_input:
+            return "I don't understand. Try something like: 5 plus 2"
+        
+        # Calculate
+        result = self.calculate(clean_input)
+        
+        if isinstance(result, str):  # It's an error
+            return result
+        else:
+            # Save to history and return result
+            self.history.append((clean_input, result))
+            return f"{clean_input} = {result}"
+
+# Simple main program
+def main():
+    calc = SmartCalculator()
+    
+    print("Simple Smart Calculator!")
+    print("Try: '5 plus 2', '2 to the power of 3', '10 mod 3', 'factorial of 5'")
+    print("Type 'history' to see past calculations, 'exit' to quit\n")
+    
+    while True:
+        try:
+            user_input = input("Calculate: ")
+            result = calc.process(user_input)
+            
+            if result is None:
+                print("Goodbye!")
+                break
+                
+            print(result)
+            print()
+            
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
+
+if __name__ == "__main__":
+    main()
+    
+
+Version 2 
+
+import re
+import math
+
+class IntelligentCalculator:
+    def __init__(self):
+        self.operations = {
+            'to the power of': '**', 'to power of': '**', 'power': '**', 'kuasa': '**',
+            'plus': '+', 'add': '+', 'added to': '+', 'tambah': '+',
+            'minus': '-', 'subtract': '-', 'less': '-', 'tolak': '-',
+            'times': '*', 'multiply': '*', 'multiplied by': '*', 'darab': '*',
+            'divide': '/', 'divided by': '/', 'over': '/', 'bahagi': '/',
+            'mod': '%', 'modulo': '%', 'modulus': '%', 'remainder': '%', 'baki': '%'
+        }
+
+        self.question_words = {
+            'what is': '', 'what\'s': '', 'calculate': '', 'compute': '',
+            'find': '', 'solve': '', 'berapa': '', 'kira': '', 'cari': ''
+        }
+
+    def parse_input(self, user_input):
+        text = user_input.lower().strip()
+
+        # Remove question phrases
+        for phrase in self.question_words:
+            text = re.sub(r'\b' + re.escape(phrase) + r'\b', '', text)
+
+        # Replace operation phrases with symbols
+        for word, symbol in sorted(self.operations.items(), key=lambda x: -len(x[0])):
+            text = re.sub(r'\b' + re.escape(word) + r'\b', symbol, text)
+
+        # Handle power words
+        text = text.replace('squared', '**2')
+        text = text.replace('cubed', '**3')
+
+        # Handle sqrt (avoid double replacement)
+        text = re.sub(r'square root of\s*([0-9]+)', r'sqrt(\1)', text)
+        text = re.sub(r'\bsqrt\s*\(\s*', 'sqrt(', text)
+
+        # Keep safe characters
+        text = re.sub(r'[^0-9a-z+\-*/.%() ]', '', text)
+        text = ' '.join(text.split())
+
+        # Auto close sqrt parentheses
+        if text.count('sqrt(') > text.count(')'):
+            text += ')' * (text.count('sqrt(') - text.count(')'))
+
+        return text
+
+    def evaluate_expression(self, expression):
+        try:
+            # Replace 'sqrt(' with 'math.sqrt('
+            expression = expression.replace('sqrt(', 'math.sqrt(')
+
+            safe_dict = {
+                "__builtins__": {},
+                "math": math,
+                "abs": abs,
+                "round": round,
+                "pow": pow,
+                "sqrt": math.sqrt
+            }
+
+            result = eval(expression, safe_dict)
+            return result
+
+        except ZeroDivisionError:
+            return "Error: Cannot divide by zero"
+        except Exception:
+            return "Error: Invalid expression"
+
+    def process_calculation(self, user_input):
+        if user_input.lower().strip() == 'exit':
+            return None
+
+        expression = self.parse_input(user_input)
+
+        if not expression:
+            return "Sorry, I couldn't understand the calculation."
+
+        result = self.evaluate_expression(expression)
+
+        if isinstance(result, str):
+            return result
+        else:
+            return expression + " = " + str(result)
+
+def main():
+    calc = IntelligentCalculator()
+
+    print("Hi! I'm your intelligent calculator.")
+    print("Examples: 'What is 5 plus 10?', '10 to the power of 2', 'Square root of 81', 'Berapa 5 tambah 10?'")
+    print("Type 'exit' to quit.\n")
+
+    while True:
+        try:
+            user_input = input("Enter your calculation: ")
+            if user_input.lower().strip() == 'exit':
+                print("Goodbye!")
+                break
+
+            result = calc.process_calculation(user_input)
+            if result is None:
+                break
+
+            print(result)
+            print()
+
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
+        except Exception as e:
+            print("An error occurred: " + str(e))
+
+if __name__ == "__main__":
+    main()
+
+
+Version 3
+
+import re
+import math
+
+class IntelligentCalculator:
+    def __init__(self):
+        self.operations = {
+            'to the power of': '**', 'to power of': '**', 'power': '**', 'kuasa': '**',
+            'plus': '+', 'add': '+', 'added to': '+', 'tambah': '+',
+            'minus': '-', 'subtract': '-', 'less': '-', 'tolak': '-',
+            'times': '*', 'multiply': '*', 'multiplied by': '*', 'darab': '*',
+            'divide': '/', 'divided by': '/', 'over': '/', 'bahagi': '/',
+            'mod': '%', 'modulo': '%', 'modulus': '%', 'remainder': '%', 'baki': '%'
+        }
+
+        self.question_words = {
+            'what is': '', 'what\'s': '', 'calculate': '', 'compute': '',
+            'find': '', 'solve': '', 'berapa': '', 'kira': '', 'cari': ''
+        }
+
+    def parse_input(self, user_input):
+        text = user_input.lower().strip()
+
+        # Remove question phrases
+        for phrase in self.question_words:
+            text = re.sub(r'\b' + re.escape(phrase) + r'\b', '', text)
+
+        # Replace operation phrases with symbols
+        for word, symbol in sorted(self.operations.items(), key=lambda x: -len(x[0])):
+            text = re.sub(r'\b' + re.escape(word) + r'\b', symbol, text)
+
+        # Handle power words
+        text = text.replace('squared', '**2')
+        text = text.replace('cubed', '**3')
+
+        # Handle sqrt (avoid double replacement)
+        text = re.sub(r'square root of\s*([0-9]+)', r'sqrt(\1)', text)
+        text = re.sub(r'\bsqrt\s*\(\s*', 'sqrt(', text)
+
+        # Keep safe characters
+        text = re.sub(r'[^0-9a-z+\-*/.%() ]', '', text)
+        text = ' '.join(text.split())
+
+        # FIX: Handle implicit zero for leading operators
+        text = text.strip()
+        if text and len(text) > 1:
+            if text[0] == '+':
+                text = '0 + ' + text[1:].strip()
+            elif text[0] == '-' and not text[1:].strip().startswith('-'):
+                # Only add 0 if it's not a negative number (like -4)
+                # Check if there's more content after the minus
+                remaining = text[1:].strip()
+                if remaining and not remaining[0].isdigit():
+                    text = '0 - ' + remaining
+                elif remaining and any(op in remaining for op in ['+', '-', '*', '/', '**', '%']):
+                    text = '0 - ' + remaining
+
+        # Auto close sqrt parentheses
+        if text.count('sqrt(') > text.count(')'):
+            text += ')' * (text.count('sqrt(') - text.count(')'))
+
+        return text
+
+    def evaluate_expression(self, expression):
+        try:
+            # Replace 'sqrt(' with 'math.sqrt('
+            expression = expression.replace('sqrt(', 'math.sqrt(')
+
+            safe_dict = {
+                "__builtins__": {},
+                "math": math,
+                "abs": abs,
+                "round": round,
+                "pow": pow,
+                "sqrt": math.sqrt
+            }
+
+            result = eval(expression, safe_dict)
+            return result
+
+        except ZeroDivisionError:
+            return "Error: Cannot divide by zero"
+        except Exception:
+            return "Error: Invalid expression"
+
+    def process_calculation(self, user_input):
+        if user_input.lower().strip() == 'exit':
+            return None
+
+        expression = self.parse_input(user_input)
+
+        if not expression:
+            return "Sorry, I couldn't understand the calculation."
+
+        result = self.evaluate_expression(expression)
+
+        if isinstance(result, str):
+            return result
+        else:
+            return expression + " = " + str(result)
+
+def main():
+    calc = IntelligentCalculator()
+
+    print("Hi! I'm your intelligent calculator.")
+    print("Examples: 'What is 5 plus 10?', '10 to the power of 2', 'Square root of 81', 'Berapa 5 tambah 10?'")
+    print("Type 'exit' to quit.\n")
+
+    while True:
+        try:
+            user_input = input("Enter your calculation: ")
+            if user_input.lower().strip() == 'exit':
+                print("Goodbye!")
+                break
+
+            result = calc.process_calculation(user_input)
+            if result is None:
+                break
+
+            print(result)
+            print()
+
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
+        except Exception as e:
+            print("An error occurred: " + str(e))
+
+if __name__ == "__main__":
+    main()
+
+
+Version 4
+
+import re
+import math
+
+class IntelligentCalculator:
+    def __init__(self):
+        # Operation keywords (English and Malay)
+        self.operations = {
+            'plus': '+', 'add': '+', 'added to': '+', 'tambah': '+',
+            'minus': '-', 'subtract': '-', 'less': '-', 'tolak': '-',
+            'times': '*', 'multiply': '*', 'multiplied by': '*', 'darab': '*',
+            'divide': '/', 'divided by': '/', 'over': '/', 'bahagi': '/',
+            'power': '**', 'to the power of': '**', 'to power of': '**', 'kuasa': '**',
+            'mod': '%', 'modulo': '%', 'remainder': '%', 'baki': '%', 'modulus': '%'
+        }
+
+        # Words to ignore/remove from the question
+        self.question_words = {
+            'what is': '', 'what\'s': '', 'calculate': '', 'compute': '',
+            'find': '', 'solve': '', 'berapa': '', 'kira': '', 'cari': ''
+        }
+
+    def parse_input(self, user_input):
+        #Turn user input into a math expression.
+        text = user_input.lower().strip()
+
+        # Remove question words
+        for word in self.question_words:
+            pattern = r'\b' + re.escape(word) + r'\b'
+            text = re.sub(pattern, '', text)
+
+        # Replace operation phrases with symbols using regex word boundaries
+        for word, symbol in self.operations.items():
+            pattern = r'\b' + re.escape(word) + r'\b'
+            text = re.sub(pattern, symbol, text)
+
+        # Handle special phrases
+        text = text.replace('squared', '**2')
+        text = text.replace('cubed', '**3')
+        text = text.replace('square root of', 'sqrt(')
+        text = text.replace('sqrt', 'sqrt(')
+
+        # Clean unwanted characters (keep numbers, symbols, sqrt)
+        text = re.sub(r'[^0-9+\-*/.%()sqrt]', ' ', text)
+        text = ' '.join(text.split())  # Remove extra spaces
+
+        return text
+
+    def evaluate_expression(self, expression):
+        #Evaluate the math expression safely.
+        try:
+            # Handle square root function
+            if 'sqrt' in expression:
+                expression = expression.replace('sqrt(', 'math.sqrt(')
+                if expression.count('(') > expression.count(')'):
+                    expression += ')'
+
+            # Create safe environment for eval
+            safe_dict = {
+                "__builtins__": {},
+                "math": math,
+                "abs": abs,
+                "round": round,
+                "pow": pow,
+                "sqrt": math.sqrt
+            }
+
+            result = eval(expression, safe_dict)
+            return result
+
+        except ZeroDivisionError:
+            return "Error: Cannot divide by zero"
+        except Exception:
+            return "Error: Invalid expression"
+
+    def process_calculation(self, user_input):
+        #Main logic to parse and calculate user input.
+        if user_input.lower().strip() == 'exit':
+            return None
+
+        expression = self.parse_input(user_input)
+
+        if not expression:
+            return "Sorry, I couldn't understand the calculation."
+
+        result = self.evaluate_expression(expression)
+
+        if isinstance(result, str):  # Error message
+            return result
+        else:
+            return expression + " = " + str(result)
+
+def main():
+    calc = IntelligentCalculator()
+
+    print("Hi! I'm your intelligent calculator.")
+    print("Examples: 'What is 5 plus 10?', 'Divide 20 by 4', 'Berapa 5 tambah 10?'")
+    print("Type 'exit' to quit.\n")
+
+    while True:
+        try:
+            user_input = input("Enter your calculation: ")
+
+            if user_input.lower().strip() == 'exit':
+                print("Goodbye!")
+                break
+
+            result = calc.process_calculation(user_input)
+            if result is None:
+                break
+
+            print(result)
+            print()
+
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
+        except Exception as e:
+            print("An error occurred: " + str(e))
+
+if __name__ == "__main__":
+    main() 
+
+
+
+
+
+
