@@ -1,14 +1,14 @@
-AI Smart Calculator 🧮
+AI Smart Calculator 
 A Python-based intelligent calculator with English & Malay language support, complete with project documentation and presentations.
 
 This repository contains: 
 
-  📜 Final Code – SmartCalculatorProject.py
-  📂 Older Coding Versions – for development history
-  📝 Project Report – detailed explanation of the system, methods, and testing
-  🎤 Project Presentation – slides used to present the calculator
+  Final Code – SmartCalculatorProject.py
+  Older Coding Versions – for development history
+  Project Report – detailed explanation of the system, methods, and testing
+  Project Presentation – slides used to present the calculator
 
-✨ Features of the Calculator: 
+Features of the Calculator: 
 
   - Natural language input in English & Malay
   - Basic math: addition, subtraction, multiplication, division, modulus, powers
@@ -19,12 +19,12 @@ This repository contains:
 
 How to run the calculator?
 
-1️⃣ Clone the repository
+1. Clone the repository
 
 git clone https://github.com/fawwazfaizal/AI-Smart-Calculator-Work
 cd AI-Smart-Calculator-Work
 
-2️⃣ Run the final version
+2. Run the final version
 Make sure you have Python 3 installed.
 
 python SmartCalculatorProject.py
@@ -55,4 +55,4 @@ AI-Smart-Calculator-Work/
 │── README.md                                    # Documentation
 
 License Project
-This project is open-source under the Skill Based IT TVET.
+This project is open-source under the SBIT TRAINING Academy TVET.
